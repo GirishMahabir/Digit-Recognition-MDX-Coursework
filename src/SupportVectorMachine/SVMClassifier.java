@@ -47,9 +47,7 @@ public class SVMClassifier {
     // Training method
     public void train(ClassLabelDS[] trainingData) {
         for (int epoch = 0; epoch < MAX_ITERATIONS; epoch++) {
-            System.out.println("Epoch: " + epoch);
             for (ClassLabelDS classLabel : trainingData) {
-                System.out.println("Class Label: " + classLabel.getLabel());
                 int[][] images = classLabel.getImages();
 //                int y = classLabel.getLabel();
                 int y = (classLabel.getLabel() == targetClass) ? 1 : -1; // Adjust label for OvR
@@ -81,7 +79,7 @@ public class SVMClassifier {
             System.arraycopy(weight, 0, prevWeight, 0, weight.length);
             prevBias = bias;
         }
-        plotTrainingData(trainingData);
+//        plotTrainingData(trainingData);
     }
 
     // Helper method to convert int[] to double[]

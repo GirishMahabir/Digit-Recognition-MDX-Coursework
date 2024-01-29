@@ -7,6 +7,7 @@ public class MultiClassSVM {
         classifiers = new SVMClassifier[numClasses];
 
         for (int i = 0; i < numClasses; i++) {
+            System.out.println("Initializing classifier for class " + i);
             classifiers[i] = new SVMClassifier(MAX_ITERATIONS, kernelType, C, epsilon, weightThreshold, bias, alpha, i);
         }
 

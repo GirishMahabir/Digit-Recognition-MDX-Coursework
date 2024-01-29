@@ -8,20 +8,20 @@ public class TestSVMClassifier {
     public static void main(String[] args) {
         // Set SVM parameters
         int numClasses = 10; // for digits 0-9
-        int MAX_ITERATIONS = 1000;
+        int MAX_ITERATIONS = 100000;
         String kernelType = "linear"; // change as needed
-        double C = 1.0;
-        double epsilon = 0.001;
-        double weightThreshold = 0.001;
+        double C = 0.5;
+        double epsilon = 0.0001;
+        double weightThreshold = 0.0001;
         double bias = 0;
-        double alpha = 0.01;
+        double alpha = 0.001;
 
         // Initialize the MultiClassSVM
         MultiClassSVM multiClassSVM = new MultiClassSVM(numClasses, MAX_ITERATIONS, kernelType, C, epsilon, weightThreshold, bias, alpha);
 
         // Load and prepare the dataset
         try {
-            String datasetPath = "/home/girish/Documents/MDX/AI/Digital Recognition/Project Files/cw2DataSet1.csv"; // update with your dataset path
+            String datasetPath = "/home/girish/Documents/MDX/AI/Digital Recognition/Project Files/cw2DataSet1.csv";
             DataSetDS[] datasetDS = PrepDataset.prepDataset(datasetPath);
             ClassLabelDS[] classLabels = PrepDataset.prepClassLabels(datasetDS);
 
