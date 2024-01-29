@@ -45,7 +45,7 @@
 
 # Resources:
 - SVM: https://scikit-learn.org/stable/auto_examples/classification/plot_digits_classification.html
-
+- https://www.kaggle.com/code/jnikhilsai/digit-classification-using-svm-on-mnist-dataset/notebook
 
 
 # SVM Notes

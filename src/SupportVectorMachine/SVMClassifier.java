@@ -1,7 +1,5 @@
 package SupportVectorMachine;
 
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
-import java.lang.Math;
 import java.util.List;
 import java.util.Random;
 
@@ -95,64 +93,6 @@ public class SVMClassifier {
             }
         }
     }
-
-    // Train the SVM model
-    public void train(List<FeatureVector> trainingData) {
-        // Initialize weights and bias
-        for (int i = 0; i < weight.length; i++) {
-            weight[i] = 0.0;
-        }
-        bias = 0.0;
-
-        // Implement the training logic (e.g., using SMO)
-        // Simplified version of the training process.
-        // Real implementation should use an optimization algorithm like SMO
-        for (int i = 0; i < MAX_ITERATIONS; i++) {
-            for (FeatureVector vector : trainingData) {
-                double[] features = vector.getFeatures();
-                int label = vector.getLabel();
-
-                if (label * (dotProduct(weight, features) + bias) <= 0) {
-                    for (int j = 0; j < weight.length; j++) {
-                        weight[j] += epsilon * label * features[j];
-                    }
-                    bias += epsilon * label;
-                }
-            }
-        }
-    }
-
-    // Predict the label of a new data point
-    public int predict(FeatureVector inputData) {
-        double sum = dotProduct(weight, inputData.getFeatures()) + bias;
-        return sum >= 0 ? 1 : -1;
-    }
-
-    // Calculate the kernel between two vectors
-    private double kernel(FeatureVector x1, FeatureVector x2) {
-        switch (kernelType) {
-            case "linear":
-                return linearKernel(x1, x2);
-            // Add other cases for different kernel types
-            default:
-                return linearKernel(x1, x2);
-        }
-    }
-
-    // Linear kernel function
-    private double linearKernel(FeatureVector x1, FeatureVector x2) {
-        return dotProduct(x1.getFeatures(), x2.getFeatures());
-    }
-
-    // Utility function for dot product
-    private double dotProduct(double[] a, double[] b) {
-        double sum = 0.0;
-        for (int i = 0; i < a.length; i++) {
-            sum += a[i] * b[i];
-        }
-        return sum;
-    }
-
 }
 
 
