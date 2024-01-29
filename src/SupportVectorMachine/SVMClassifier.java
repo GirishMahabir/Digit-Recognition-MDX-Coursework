@@ -1,99 +1,174 @@
 package SupportVectorMachine;
 
-import java.util.List;
-import java.util.Random;
+import org.knowm.xchart.*;
+import org.knowm.xchart.style.markers.SeriesMarkers;
+import javax.swing.*;
+import java.util.Arrays;
+
 
 public class SVMClassifier {
     // Parameters
     // Max Iterations: The maximum number of iterations to be performed on the training data.
-    private static int MAX_ITERATIONS = 10000;
+    private final int MAX_ITERATIONS;
     // Kernel Type: The type of kernel to be used in the SVM (linear, polynomial, radial basis function, etc.)
-    private static String kernelType = "linear";
+    private final String kernelType;
     // C: The penalty parameter for the error term.
-    private static double C = 1.0;
+    private final double C;
     // Epsilon: The tolerance value for the convergence of the SVM. Regularization Parameter.
-    private static double epsilon = 0.001;
+    private final double epsilon;
     // Weight Threshold: The threshold for the weight of the support vectors. Convergence Criteria.
-    private static double weightThreshold;
+    private final double weightThreshold;
+    private final double alpha;
     // Bias: The bias value for the SVM.
-    private static double bias = 0.0;
-    private static final double[] weight = new double[64]; // Assuming 64 features (pixels in 8x8 image)
+    double bias;
+    double[] weight; // Dynamic size based on input features
+    private double[] prevWeight;
+    private double prevBias;
+    final int targetClass;
+    private SwingWrapper<XYChart> swingWrapper;
+    private JFrame displayFrame;
 
-    // Setters and getter Functions
-    public static int getMaxIterations() {
-        return MAX_ITERATIONS;
+    public SVMClassifier(int MAX_ITERATIONS, String kernelType, double c, double epsilon, double weightThreshold,
+                         double bias, double alpha, int targetClass) {
+        this.MAX_ITERATIONS = MAX_ITERATIONS;
+        this.kernelType = kernelType;
+        this.C = c;
+        this.epsilon = epsilon;
+        this.weightThreshold = weightThreshold;
+        this.bias = bias;
+        this.weight = new double[64]; // Initialize based on the feature size
+        this.prevWeight = new double[64]; // Initialize based on the feature size
+        Arrays.fill(this.prevWeight, Double.MAX_VALUE); // Initialize with large value
+        this.prevBias = Double.MAX_VALUE; // Initialize with large value
+        this.alpha = alpha;
+        this.targetClass = targetClass;
     }
 
-    public static void setMaxIterations(int maxIterations) {
-        MAX_ITERATIONS = maxIterations;
-    }
+    // Training method
+    public void train(ClassLabelDS[] trainingData) {
+        for (int epoch = 0; epoch < MAX_ITERATIONS; epoch++) {
+            System.out.println("Epoch: " + epoch);
+            for (ClassLabelDS classLabel : trainingData) {
+                System.out.println("Class Label: " + classLabel.getLabel());
+                int[][] images = classLabel.getImages();
+//                int y = classLabel.getLabel();
+                int y = (classLabel.getLabel() == targetClass) ? 1 : -1; // Adjust label for OvR
 
-    public static String getKernelType() {
-        return kernelType;
-    }
+                for (int[] image : images) {
+                    double[] x = convertToDouble(image);
+                    double prediction = applyKernel(x) - bias;
 
-    public static void setKernelType(String kernelType) {
-        SVMClassifier.kernelType = kernelType;
-    }
-
-    public static double getC() {
-        return C;
-    }
-
-    public static void setC(double c) {
-        C = c;
-    }
-
-    public static double getEpsilon() {
-        return epsilon;
-    }
-
-    public static void setEpsilon(double epsilon) {
-        SVMClassifier.epsilon = epsilon;
-    }
-
-    public static double getWeightThreshold() {
-        return weightThreshold;
-    }
-
-    public static void setWeightThreshold(double weightThreshold) {
-        SVMClassifier.weightThreshold = weightThreshold;
-    }
-
-    public static double getBias() {
-        return bias;
-    }
-
-    public static void setBias(double bias) {
-        SVMClassifier.bias = bias;
-    }
-
-    public SVMClassifier(int maxIterations, String kernelType, double c, double epsilon, double weightThreshold, double bias) {
-        MAX_ITERATIONS = maxIterations;
-        SVMClassifier.kernelType = kernelType;
-        C = c;
-        SVMClassifier.epsilon = epsilon;
-        SVMClassifier.weightThreshold = weightThreshold;
-        SVMClassifier.bias = bias;
-    }
-
-    // Initialize the weight and bias values
-    public static void initialize() {
-        /*
-          Function to adjust the weight and bias values of the SVM.
-          - This is done by solving an optimization problem that maximizes the margin between the different support vectors.
-          - The margin is defined as the distance between the hyperplane and the nearest data points from each support vectors.
-          - Initial values of the weight and bias are set randomly or if the user has provided them, they are used.
-          - However, the weight and bias values are adjusted in the training phase.
-        */
-        if (weightThreshold == 0.0) {
-            Random random = new Random();
-            for (int i = 0; i < weight.length; i++) {
-                weight[i] = random.nextDouble();
+                    if (y * prediction < 1) {
+                        // Misclassified, update weight and bias
+                        for (int j = 0; j < weight.length; j++) {
+//                            weight[j] += C * (y * x[j] - 2 * 1.0 / MAX_ITERATIONS * weight[j]);
+                            weight[j] += alpha * (C * (y * x[j] - 2 * 1.0 / MAX_ITERATIONS * weight[j]));
+                        }
+//                        bias += C * y;
+                        bias += alpha * C * y;
+                    } else {
+                        // Correct classification, update only weight
+                        for (int j = 0; j < weight.length; j++) {
+                            weight[j] -= C * 2 * 1.0 / MAX_ITERATIONS * weight[j];
+                        }
+                    }
+                }
             }
+            if (hasConverged()) {
+                System.out.println("Converged at epoch: " + epoch);
+                break;
+            }
+            System.arraycopy(weight, 0, prevWeight, 0, weight.length);
+            prevBias = bias;
         }
+        plotTrainingData(trainingData);
     }
+
+    // Helper method to convert int[] to double[]
+    private double[] convertToDouble(int[] array) {
+        double[] doubleArray = new double[array.length];
+        for (int i = 0; i < array.length; i++) {
+            doubleArray[i] = array[i];
+        }
+        return doubleArray;
+    }
+
+    // Kernel application function
+    private double applyKernel(double[] x) {
+        // Placeholder for kernel computation, currently acts as a linear kernel
+        // To add: Implement other types of kernels based on the value of kernelType
+        return dotProduct(x);
+    }
+
+    // Dot product function
+    private double dotProduct(double[] x) {
+        double sum = 0;
+        for (int i = 0; i < weight.length; i++) {
+            sum += weight[i] * x[i];
+        }
+        return sum;
+    }
+
+    // Prediction method
+    public int predict(int[] image) {
+        double[] x = convertToDouble(image);
+        double result = applyKernel(x) - bias;
+        return result > 0 ? 1 : -1;
+    }
+
+    public double score(int[] image) {
+        double[] x = convertToDouble(image);
+        return applyKernel(x) - bias; // raw decision function value
+    }
+
+    private boolean hasConverged() {
+        double maxWeightDiff = 0.0;
+        for (int i = 0; i < weight.length; i++) {
+            maxWeightDiff = Math.max(maxWeightDiff, Math.abs(weight[i] - prevWeight[i]));
+        }
+        double biasDiff = Math.abs(bias - prevBias);
+
+        return maxWeightDiff < weightThreshold && biasDiff < epsilon;
+    }
+
+    public void plotTrainingData(ClassLabelDS[] trainingData) {
+        // Create Chart
+        XYChart chart = new XYChartBuilder().width(800).height(600).title("SVM Training Visualization").xAxisTitle("Feature 1").yAxisTitle("Feature 2").build();
+
+        // Customize Chart
+        chart.getStyler().setDefaultSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Scatter);
+        chart.getStyler().setChartTitleVisible(true);
+        chart.getStyler().setLegendVisible(true);
+        chart.getStyler().setMarkerSize(6);
+
+        // Collect data for each class label
+        for (ClassLabelDS classLabel : trainingData) {
+            int[][] images = classLabel.getImages();
+            double[] xData = new double[images.length];
+            double[] yData = new double[images.length];
+
+            for (int i = 0; i < images.length; i++) {
+                // Assuming the first two features are the most significant for visualization
+                xData[i] = images[i][0];
+                yData[i] = images[i][1];
+            }
+
+            // Add series for each class label
+            XYSeries series = chart.addSeries("Class " + classLabel.getLabel(), xData, yData);
+            series.setMarker(SeriesMarkers.CIRCLE);
+        }
+
+        // If there's an existing display, dispose of it.
+        if (displayFrame != null) {
+            displayFrame.dispose();
+        }
+
+        // Show chart
+        swingWrapper = new SwingWrapper<>(chart);
+        displayFrame = swingWrapper.displayChart();
+
+        // Make the JFrame close when the next one opens
+        displayFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+    }
+
 }
-
-
-

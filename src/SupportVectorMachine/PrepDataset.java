@@ -9,7 +9,7 @@ public class PrepDataset {
     // Prepare Dataset in the DatasetDS format.
     public static DataSetDS[] prepDataset(String datasetPath) throws IOException {
         int[][] dataset = readDataset(datasetPath);
-        // Last column is the label; rest are the image.
+        // The Last column is the label; rest are the image.
         DataSetDS[] datasetDS = new DataSetDS[dataset.length];
         for (int i = 0; i < dataset.length; i++) {
             int[] image = new int[dataset[i].length - 1];
