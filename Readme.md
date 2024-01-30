@@ -52,6 +52,16 @@
 - The primary objective of SVM is to find a hyperplane that maximally separates the different classes in the dataset.
 - The "weight(w)" vector determines the orientation of the hyperplane, while the "bias(b)" term determines the offset of the hyperplane from the origin.
 
+0.8424821002386634
+- Max_Itterations: 100000
+- Kernel: linear
+- C: 0.5
+- epsilon: 0.0001
+- weightThreshold: 0.0001
+- bias: 0.0
+- alpha: 0.00001
+- gamma: 0.001
+
 
 
 

@@ -9,15 +9,16 @@ public class TestSVMClassifier {
         // Set SVM parameters
         int numClasses = 10; // for digits 0-9
         int MAX_ITERATIONS = 100000;
-        String kernelType = "linear"; // change as needed
+        String kernelType = "linear";
         double C = 0.5;
         double epsilon = 0.0001;
         double weightThreshold = 0.0001;
         double bias = 0;
-        double alpha = 0.001;
+        double alpha = 0.00001;
+        double gamma = 0.001;
 
         // Initialize the MultiClassSVM
-        MultiClassSVM multiClassSVM = new MultiClassSVM(numClasses, MAX_ITERATIONS, kernelType, C, epsilon, weightThreshold, bias, alpha);
+        MultiClassSVM multiClassSVM = new MultiClassSVM(numClasses, MAX_ITERATIONS, kernelType, C, epsilon, weightThreshold, bias, alpha, gamma);
 
         // Load and prepare the dataset
         try {
