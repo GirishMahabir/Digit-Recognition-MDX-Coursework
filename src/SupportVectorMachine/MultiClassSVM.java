@@ -3,7 +3,7 @@ package SupportVectorMachine;
 public class MultiClassSVM {
     SVMClassifier[] classifiers;
 
-    public MultiClassSVM(int numClasses, int MAX_ITERATIONS, String kernelType, double C, double epsilon, double weightThreshold, double bias, double alpha) {
+    public MultiClassSVM(int numClasses, int MAX_ITERATIONS, String kernelType, double C, double epsilon, double weightThreshold, double bias, double alpha, double gamma) {
         classifiers = new SVMClassifier[numClasses];
 
         for (int i = 0; i < numClasses; i++) {

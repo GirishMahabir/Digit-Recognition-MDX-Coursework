@@ -1,8 +1,5 @@
 package SupportVectorMachine;
 
-import org.knowm.xchart.*;
-import org.knowm.xchart.style.markers.SeriesMarkers;
-import javax.swing.*;
 import java.util.Arrays;
 
 
@@ -25,8 +22,6 @@ public class SVMClassifier {
     private double[] prevWeight;
     private double prevBias;
     final int targetClass;
-    private SwingWrapper<XYChart> swingWrapper;
-    private JFrame displayFrame;
 
     public SVMClassifier(int MAX_ITERATIONS, String kernelType, double c, double epsilon, double weightThreshold,
                          double bias, double alpha, int targetClass) {
@@ -127,46 +122,6 @@ public class SVMClassifier {
         double biasDiff = Math.abs(bias - prevBias);
 
         return maxWeightDiff < weightThreshold && biasDiff < epsilon;
-    }
-
-    public void plotTrainingData(ClassLabelDS[] trainingData) {
-        // Create Chart
-        XYChart chart = new XYChartBuilder().width(800).height(600).title("SVM Training Visualization").xAxisTitle("Feature 1").yAxisTitle("Feature 2").build();
-
-        // Customize Chart
-        chart.getStyler().setDefaultSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Scatter);
-        chart.getStyler().setChartTitleVisible(true);
-        chart.getStyler().setLegendVisible(true);
-        chart.getStyler().setMarkerSize(6);
-
-        // Collect data for each class label
-        for (ClassLabelDS classLabel : trainingData) {
-            int[][] images = classLabel.getImages();
-            double[] xData = new double[images.length];
-            double[] yData = new double[images.length];
-
-            for (int i = 0; i < images.length; i++) {
-                // Assuming the first two features are the most significant for visualization
-                xData[i] = images[i][0];
-                yData[i] = images[i][1];
-            }
-
-            // Add series for each class label
-            XYSeries series = chart.addSeries("Class " + classLabel.getLabel(), xData, yData);
-            series.setMarker(SeriesMarkers.CIRCLE);
-        }
-
-        // If there's an existing display, dispose of it.
-        if (displayFrame != null) {
-            displayFrame.dispose();
-        }
-
-        // Show chart
-        swingWrapper = new SwingWrapper<>(chart);
-        displayFrame = swingWrapper.displayChart();
-
-        // Make the JFrame close when the next one opens
-        displayFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     }
 
 }
