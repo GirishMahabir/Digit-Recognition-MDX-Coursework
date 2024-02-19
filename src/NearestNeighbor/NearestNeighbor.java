@@ -9,13 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static java.lang.System.exit;
-
 public class NearestNeighbor {
 
+    // Path and file configuration
     static String dataDir = "/home/girish/Documents/MDX/AI/Digital Recognition/Project Files/";
     static String datasetExt = ".csv";
-
     static String datasetPath = dataDir + "cw2DataSet1" + datasetExt;
     static String datasetPathOut = dataDir + "cw2DataSet1Sorted" + datasetExt;
     static String datasetPathTrain = dataDir + "cw2DataSet1Train" + datasetExt;
@@ -23,145 +21,173 @@ public class NearestNeighbor {
     static String datasetPath2 = dataDir + "cw2DataSet2" + datasetExt;
     static String datasetPathOut2 = dataDir + "cw2DataSet2Sorted" + datasetExt;
 
+    // Visualization characters
     static char low = '.';
     static char mid = 'x';
     static char high = 'X';
+
+    /**
+     * Main method to initiate the nearest neighbor classification process. It prepares the datasets, performs the
+     * classification, and prints out the results.
+     *
+     * @param args Command line arguments, not used in this implementation.
+     * @throws IOException If there is an issue with file reading or writing during dataset preparation.
+     */
     public static void main(String[] args) throws IOException {
-        // Step 1: Load the dataset
-        // Sort the dataset by the last column
-        CSVSorter.sortCsvByColumn(datasetPath, datasetPathOut, 64);
-        datasetPath = datasetPathOut;
-
-        CSVSorter.divideTrainTestData(datasetPath, datasetPathTrain, datasetPathTest,80);
-
-        // UNCOMMENT THIS TO USE THE SECOND DATASET
-//        CSVSorter.sortCsvByColumn(datasetPath2, datasetPathOut2, 64);
-//        datasetPath2 = datasetPathOut2;
-//        datasetPathTest = datasetPath2;
-
+        prepareDatasets();
         List<List<Integer>> datasetTrain = csvToIntList(datasetPathTrain);
         List<List<Integer>> datasetTest = csvToIntList(datasetPathTest);
+        performClassificationAndPrintResults(datasetTrain, datasetTest);
+        // Remove the temporary sorted files by passing list of temporary files to CSVSorter.removeTempFiles.
+        CSVSorter.removeTempFiles(Arrays.asList(datasetPathOut, datasetPathOut2, datasetPathTrain));
+    }
 
-        float highestValue = getHighestValue(datasetTrain);
-        float lowestValue = getLowestValue(datasetTrain);
-        float midValue = (highestValue + lowestValue) / 2;
+    /**
+     * Prepares the datasets for classification by sorting based on labels and dividing into training and testing sets.
+     * This function sorts the datasets by their labels to ensure that the division between training and testing data
+     * is based on a consistent criterion.
+     *
+     * @throws IOException If an error occurs during file reading or writing.
+     */
+    private static void prepareDatasets() throws IOException {
+        // Sort the dataset 1 by the labels (assuming labels are in the last column, index 64)
+        // and use the sorted dataset for training.
+        CSVSorter.sortCsvByColumn(datasetPath, datasetPathOut, 64);
+        datasetPathTrain = datasetPathOut; // Use the sorted dataset 1 for training.
 
-//        float firstThreshold = lowestValue + (int) ((midValue - lowestValue) / 2);
-//        float secondThreshold = midValue + (int) ((highestValue - midValue) / 2);
-//        for (int i = 0; i < dataset.size()/2; i++) {
-//            printRowToConsole(dataset.get(i), firstThreshold, secondThreshold);
-//        }
+        // Directly use dataset 2 for testing without sorting as it's assumed to be prepared.
+        datasetPathTest = datasetPath2;
 
+    }
 
-        int totalPredictions = datasetTest.size();
+    /**
+     * Converts the contents of a CSV file into a list of lists of integers. Each line in the CSV file is converted
+     * into a list of integers, representing a single data point in the dataset. This method is used to load the dataset
+     * from a file into a data structure that can be used for further processing.
+     *
+     * @param dataSetPath The file path of the CSV dataset.
+     * @return A list of lists of integers, where each inner list represents a row from the CSV file.
+     * @throws IOException If an error occurs while reading the file.
+     */
+    public static List<List<Integer>> csvToIntList(String dataSetPath) throws IOException {
+        List<String> lines = Files.readAllLines(Paths.get(dataSetPath));
+        return lines.stream().map(line -> Arrays.stream(line.split(","))
+                .map(Integer::parseInt)
+                .collect(Collectors.toList())).collect(Collectors.toList());
+    }
+
+    /**
+     * Performs the nearest neighbor classification on the test dataset against the training dataset and prints the results.
+     * This method iterates through each item in the test dataset, classifies it using the nearest neighbor algorithm
+     * by finding the closest match in the training dataset, and updates the prediction statistics. Finally, it prints
+     * the classification accuracy and precision for each label.
+     *
+     * @param datasetTrain The training dataset loaded as a list of lists of integers.
+     * @param datasetTest The test dataset loaded as a list of lists of integers.
+     */
+    private static void performClassificationAndPrintResults(List<List<Integer>> datasetTrain, List<List<Integer>> datasetTest) {
         int correctPredictions = 0;
         Map<Integer, Integer> truePositives = new HashMap<>();
         Map<Integer, Integer> falsePositives = new HashMap<>();
         Map<Integer, Integer> actualCounts = new HashMap<>();
 
-
-
-        for (int i = 0; i < datasetTest.size(); i++) {
-            // Initialize variables to keep track of the smallest distance and index of the closest match
-            double smallestDistance = Double.MAX_VALUE;
-            int closestMatchIndex = -1;
-
-            // Get the current digit from the second half
-            List<Integer> currentDigit = datasetTest.get(i);
-
-            // Compare the current digit to each digit in the first half
-            for (int j = 0; j < datasetTrain.size(); j++) {
-                // Get the digit from the first half
-                List<Integer> comparisonDigit = datasetTrain.get(j);
-
-                // Calculate Euclidean distance
-                double distance = calculateEuclideanDistance(currentDigit, comparisonDigit);
-                // Check if this is the smallest distance so far
-                if (distance < smallestDistance) {
-                    smallestDistance = distance;
-                    closestMatchIndex = j;
-                }
-            }
-
-            int predictedLabel = datasetTrain.get(closestMatchIndex).get(64);
-            int actualLabel = datasetTest.get(i).get(64);
-
-            if (predictedLabel == actualLabel) {
+        for (List<Integer> testRow : datasetTest) {
+            ClassificationResult result = classifyRow(testRow, datasetTrain);
+            if (result.isCorrect) {
                 correctPredictions++;
-                truePositives.put(predictedLabel, truePositives.getOrDefault(predictedLabel, 0) + 1);
+                truePositives.put(result.predictedLabel, truePositives.getOrDefault(result.predictedLabel, 0) + 1);
             } else {
-                falsePositives.put(predictedLabel, falsePositives.getOrDefault(predictedLabel, 0) + 1);
+                falsePositives.put(result.predictedLabel, falsePositives.getOrDefault(result.predictedLabel, 0) + 1);
             }
-            actualCounts.put(actualLabel, actualCounts.getOrDefault(actualLabel, 0) + 1);
-
-            // Step 4: Print the results
-//            System.out.println("Test Digit " + i + " predicted as: " + predictedLabel + ", actual: " + actualLabel);
+            actualCounts.put(testRow.get(64), actualCounts.getOrDefault(testRow.get(64), 0) + 1);
         }
 
-        double accuracy = (double) correctPredictions / totalPredictions;
-        System.out.println("Accuracy: " + (accuracy * 100) + "%");
-
-        for (int digit = 0; digit <= 9; digit++) {
-            int tp = truePositives.getOrDefault(digit, 0);
-            int fp = falsePositives.getOrDefault(digit, 0);
-            double precision = tp + fp > 0 ? (double) tp / (tp + fp) : 0;
-            System.out.println("Precision for digit " + digit + ": " + (precision * 100) + "%");
-        }
+        printResults(correctPredictions, datasetTest.size(), truePositives, falsePositives, actualCounts);
     }
 
-    public static List<List<Integer>> csvToIntList(String dataSetPath) throws IOException {
-        List<String> lines = Files.readAllLines(Paths.get(dataSetPath));
-        return lines.stream().map(line -> {
-            String[] values = line.split(",");
-            return Arrays.stream(values).map(Integer::parseInt).collect(Collectors.toList());
-        }).collect(Collectors.toList());
-    }
+    /**
+     * Classifies a single row from the test dataset by finding the closest row in the training dataset using the
+     * Euclidean distance metric. This method calculates the distance between the test row and each row in the training
+     * dataset, identifies the row with the smallest distance (closest match), and determines if the prediction is correct
+     * based on the labels.
+     * @param testRow A single row from the test dataset.
+     * @param datasetTrain The training dataset.
+     * @return A ClassificationResult object containing information about whether the classification was correct,
+     * the index of the closest match, and the predicted label.
+     */
+    private static ClassificationResult classifyRow(List<Integer> testRow, List<List<Integer>> datasetTrain) {
+        double smallestDistance = Double.MAX_VALUE;
+        int closestMatchIndex = -1;
+        int actualLabel = testRow.get(64);
 
-    public static int getHighestValue(List<List<Integer>> dataset) {
-        return dataset.stream().flatMap(List::stream).max(Integer::compareTo).get();
-    }
-
-    public static int getLowestValue(List<List<Integer>> dataset) {
-        return dataset.stream().flatMap(List::stream).min(Integer::compareTo).get();
-    }
-
-
-    public static void printRowToConsole(List<Integer> row, float firstThreshold, float secondThreshold) {
-        // 64 Elements in the row.
-        // Build 8x8 matrix and return it.
-        // Use the chars low, mid, high to represent the values.
-        // Use the lowestValue, midValue, highestValue and the thresholds to determine the chars.
-        // Print the matrix to the console.
-        for (int i = 0; i < row.size() - 1; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            if (row.get(i) < firstThreshold) {
-                System.out.print(low + " ");
-            } else if (row.get(i) < secondThreshold) {
-                System.out.print(mid + " ");
-            } else {
-                System.out.print(high + " ");
+        for (int trainIndex = 0; trainIndex < datasetTrain.size(); trainIndex++) {
+            double distance = calculateEuclideanDistance(testRow, datasetTrain.get(trainIndex));
+            if (distance < smallestDistance) {
+                smallestDistance = distance;
+                closestMatchIndex = trainIndex;
             }
         }
-        System.out.println();
+
+        int predictedLabel = datasetTrain.get(closestMatchIndex).get(64);
+        boolean isCorrect = predictedLabel == actualLabel;
+        return new ClassificationResult(isCorrect, closestMatchIndex, predictedLabel);
     }
 
+    /**
+     * Calculates the Euclidean distance between two vectors (digit representations). This method is used as part of
+     * the nearest neighbor classification to find the closest match for a test digit in the training dataset.
+     * @param digit1 The first digit vector.
+     * @param digit2 The second digit vector.
+     * @return The Euclidean distance between the two digit vectors.
+     */
     static double calculateEuclideanDistance(List<Integer> digit1, List<Integer> digit2) {
-        /*
-         * The Euclidean distance between two vectors is the square root of the sum of the squared differences between
-         * the elements in the two vectors.
-         * @param List digit1 The first digit vector
-         * @param List digit2 The second digit vector
-         */
-        // Initialize sum of squared differences
         double sumSquaredDiffs = 0.0;
-        // Loop through each element in the digit vectors
         for (int i = 0; i < digit1.size() - 1; i++) {
-            // Calculate the difference between the elements, square it, and add it to the sum
             sumSquaredDiffs += Math.pow(digit1.get(i) - digit2.get(i), 2);
         }
-        // Take the square root of the sum to get the Euclidean distance
         return Math.sqrt(sumSquaredDiffs);
+    }
+
+    /**
+     * Prints the results of the nearest neighbor classification, including the overall accuracy and the precision
+     * for each digit label. This method calculates the accuracy by comparing the number of correct predictions to the
+     * total predictions and calculates the precision for each label based on true positives and false positives.
+     * @param correctPredictions The number of correct predictions made by the classifier.
+     * @param totalPredictions The total number of predictions made.
+     * @param truePositives A map containing the count of true positive predictions for each label.
+     * @param falsePositives A map containing the count of false positive predictions for each label.
+     * @param actualCounts A map containing the count of actual occurrences of each label in the test dataset.
+     */
+    private static void printResults(int correctPredictions, int totalPredictions, Map<Integer, Integer> truePositives, Map<Integer, Integer> falsePositives, Map<Integer, Integer> actualCounts) {
+        double accuracy = (double) correctPredictions / totalPredictions * 100;
+        System.out.println("Accuracy: " + accuracy + "%");
+
+        truePositives.forEach((key, value) -> {
+            int fp = falsePositives.getOrDefault(key, 0);
+            double precision = value + fp > 0 ? (double) value / (value + fp) * 100 : 0;
+            System.out.println("Precision for digit " + key + ": " + precision + "%");
+        });
+    }
+
+    /**
+     * Represents the result of classifying a single test row. This class contains information about whether the
+     * classification was correct, the index of the closest match in the training dataset, and the predicted label.
+     */
+    private static class ClassificationResult {
+        boolean isCorrect;
+        int closestMatchIndex;
+        int predictedLabel;
+
+        /**
+         * Constructs a ClassificationResult instance.
+         * @param isCorrect Indicates whether the classification prediction was correct.
+         * @param closestMatchIndex The index of the closest match found in the training dataset.
+         * @param predictedLabel The label predicted by the classifier.
+         */
+        ClassificationResult(boolean isCorrect, int closestMatchIndex, int predictedLabel) {
+            this.isCorrect = isCorrect;
+            this.closestMatchIndex = closestMatchIndex;
+            this.predictedLabel = predictedLabel;
+        }
     }
 }
