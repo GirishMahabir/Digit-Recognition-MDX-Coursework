@@ -12,13 +12,13 @@ import java.util.stream.Collectors;
 public class NearestNeighbor {
 
     // Path and file configuration
-    static String dataDir = "/home/girish/Documents/MDX/AI/Digital Recognition/Project Files/";
-    static String datasetExt = ".csv";
-    static String datasetPath = dataDir + "cw2DataSet1" + datasetExt;
+    static String dataDir = "/home/girish/Documents/MDX/AI/Digital Recognition/Project Files/"; // Path to the directory containing the dataset files.
+    static String datasetExt = ".csv"; // File extension for the dataset files.
+    static String datasetPath = dataDir + "cw2DataSet2" + datasetExt; // The dataset to be used for training.
     static String datasetPathOut = dataDir + "cw2DataSet1Sorted" + datasetExt;
     static String datasetPathTrain = dataDir + "cw2DataSet1Train" + datasetExt;
     static String datasetPathTest = dataDir + "cw2DataSet1Test" + datasetExt;
-    static String datasetPath2 = dataDir + "cw2DataSet2" + datasetExt;
+    static String datasetPath2 = dataDir + "cw2DataSet1" + datasetExt; // The dataset to be used for testing.
     static String datasetPathOut2 = dataDir + "cw2DataSet2Sorted" + datasetExt;
 
     // Visualization characters

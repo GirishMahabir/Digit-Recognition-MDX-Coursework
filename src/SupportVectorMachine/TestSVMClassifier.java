@@ -1,67 +1,81 @@
-//package SupportVectorMachine;
-//
-//import java.io.IOException;
-//import java.util.Arrays;
-//
-//public class TestSVMClassifier {
-//
-//    public static void main(String[] args) {
-//        // Set SVM parameters
-//        int numClasses = 10; // for digits 0-9
-//        int MAX_ITERATIONS = 100000000;
-//        String kernelType = "linear";
-//        double C = 0.85;
-//        double epsilon = 0.00001;
-//        double weightThreshold = 0.00001;
-//        double bias = 0;
-//        double alpha = 0.000001;
-//        double gamma = 0.5;
-//
-//        // Initialize the MultiClassSVM
-//        MultiClassSVM multiClassSVM = new MultiClassSVM(numClasses, MAX_ITERATIONS, kernelType, C, epsilon, weightThreshold, bias, alpha, gamma);
-//
-//        // Load and prepare the dataset
-//        try {
-//            String datasetPathTrain = "/home/girish/Documents/MDX/AI/Digital Recognition/Project Files/cw2DataSet1.csv";
-//            String datasetPathTest = "/home/girish/Documents/MDX/AI/Digital Recognition/Project Files/cw2DataSet2.csv";
-//
-//            // Load and prepare training dataset
-//            DataSetDS[] datasetDSTrain = PrepDataset.prepDataset(datasetPathTrain);
-//            ClassLabelDS[] trainingData = PrepDataset.prepClassLabels(datasetDSTrain);
-//            System.out.println("Training data size: " + trainingData.length);
-//
-//            // Load and prepare testing dataset
-//            DataSetDS[] datasetDSTest = PrepDataset.prepDataset(datasetPathTest);
-//            ClassLabelDS[] testingData = PrepDataset.prepClassLabels(datasetDSTest);
-//            System.out.println("Testing data size: " + testingData.length);
-//
-//            // Train the model
-//            multiClassSVM.train(trainingData);
-//
-//            // Print classifier details (weights and bias)
-//            // ... [Same as before]
-//
-//            // Test the model
-//            int correctPredictions = 0;
-//            int totalPredictions = 0;
-//            for (ClassLabelDS testingClass : testingData) {
-//                int[][] images = testingClass.getImages();
-//                for (int[] image : images) {
-//                    int predictedLabel = multiClassSVM.predict(image);
-//                    if (predictedLabel == testingClass.getLabel()) {
-//                        correctPredictions++;
-//                    }
-//                    totalPredictions++;
-//                }
-//            }
-//
-//            // Calculate and print the accuracy
-//            double accuracy = (double) correctPredictions / totalPredictions;
-//            System.out.println("Accuracy: " + accuracy);
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//}
+package SupportVectorMachine;
+
+import java.io.IOException;
+
+/**
+ * Demonstrates the setup, training, and testing of a multi-class SVM classifier.
+ * This class is designed to classify digits (0-9) using a dataset split into training and testing sets.
+ */
+public class TestSVMClassifier {
+
+    /**
+     * Main method to execute the SVM classification process.
+     * It initializes the SVM with specific parameters, loads the training and testing datasets,
+     * trains the SVM model, evaluates its performance on the testing set, and prints the accuracy.
+     *
+     * @param args Command line arguments (not used in this implementation).
+     */
+    public static void main(String[] args) {
+        // Define SVM parameters for digit recognition (0-9)
+        MultiClassSVM multiClassSVM = getMultiClassSVM();
+
+        // Specify paths to the training and testing datasets
+        String datasetPathTrain = "/home/girish/Documents/MDX/AI/Digital Recognition/Project Files/cw2DataSet1.csv";
+        String datasetPathTest = "/home/girish/Documents/MDX/AI/Digital Recognition/Project Files/cw2DataSet2.csv";
+
+        try {
+            // Load and prepare the training dataset
+            DataSetDS[] trainDataset = PrepDataset.prepDataset(datasetPathTrain);
+            ClassLabelDS[] trainClassLabels = PrepDataset.prepClassLabels(trainDataset);
+
+            // Load and prepare the testing dataset
+            DataSetDS[] testDataset = PrepDataset.prepDataset(datasetPathTest);
+            ClassLabelDS[] testClassLabels = PrepDataset.prepClassLabels(testDataset);
+
+            // Train the SVM model with the prepared training data
+            multiClassSVM.train(trainClassLabels);
+
+            // Evaluate the trained model with the testing data
+            int correctPredictions = 0;
+            int totalPredictions = 0;
+            for (ClassLabelDS testLabel : testClassLabels) {
+                int[][] testImages = testLabel.getImages();
+                for (int[] image : testImages) {
+                    int predictedLabel = multiClassSVM.predict(image);
+                    if (predictedLabel == testLabel.getLabel()) {
+                        correctPredictions++;
+                    }
+                    totalPredictions++;
+                }
+            }
+
+            // Calculate and display the accuracy of the model
+            double accuracy = (double) correctPredictions / totalPredictions;
+            System.out.println("Model accuracy: " + (accuracy * 100) + "%");
+
+        } catch (IOException e) {
+            System.err.println("Failed to load datasets.");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Initializes the multi-class SVM classifier with specific parameters.
+     *
+     * @return MultiClassSVM instance with specified parameters.
+     */
+    private static MultiClassSVM getMultiClassSVM() {
+        int numClasses = 10;
+        int maxIterations = 10000000;
+        String kernelType = "linear";
+        double penaltyParameter = 0.85;
+        double epsilon = 0.00001;
+        double weightThreshold = 0.00001;
+        double initialBias = 0;
+        double learningRate = 0.000001;
+
+        // Initialize the multi-class SVM classifier with the specified parameters
+        MultiClassSVM multiClassSVM = new MultiClassSVM(numClasses, maxIterations, kernelType, penaltyParameter, epsilon, weightThreshold, initialBias, learningRate);
+        return multiClassSVM;
+    }
+}
